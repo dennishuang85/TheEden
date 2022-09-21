@@ -1,0 +1,34 @@
+name: "CodeQL"
+
+# @see https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#onpushpull_requestbranchestags
+on: [push, pull_request]
+
+jobs:
+  analyze:
+    name: actions-codeql-analyze
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Build SRS
+        run: |
+          echo "pwd: $(pwd), who: $(whoami)"
+          docker run --rm -v $(pwd):$(pwd) -w $(pwd)/trunk ossrs/srs:ubuntu20-cache \
+              bash -c "./configure --jobs=2 && chmod 777 -R objs"
+          cd trunk && ./configure --jobs=2 && make -j2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
